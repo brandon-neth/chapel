@@ -567,7 +567,7 @@ module ChapelRange {
   }
 
 
-  /* Returns true if this range's high bound is *not* :math:`infty`,
+  /* Returns true if this range's high bound is *not* :math:`\infty`,
      and false otherwise */
   proc range.hasHighBound() param
     return boundedType == BoundedRangeType.bounded ||
