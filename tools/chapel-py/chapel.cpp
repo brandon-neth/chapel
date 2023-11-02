@@ -369,9 +369,22 @@ static PyObject* ContextObject_is_bundled_path(ContextObject *self, PyObject* ar
   return PyBool_FromLong(isInternalPath);
 }
 
+static PyObject* ContextObject_advance_to_next_revision(ContextObject *self, PyObject* args) {
+  auto context = &self->context;
+  bool prepareToGc;
+  if (!PyArg_ParseTuple(args, "b", &prepareToGc)) {
+    PyErr_BadArgument();
+    return nullptr;
+  }
+
+  context->advanceToNextRevision(prepareToGc);
+  Py_RETURN_NONE;
+}
+
 static PyMethodDef ContextObject_methods[] = {
   { "parse", (PyCFunction) ContextObject_parse, METH_VARARGS, "Parse a top-level AST node from the given file" },
   { "is_bundled_path", (PyCFunction) ContextObject_is_bundled_path, METH_VARARGS, "Check if the given file path is within the bundled (built-in) Chapel files" },
+  { "advance_to_next_revision", (PyCFunction) ContextObject_advance_to_next_revision, METH_VARARGS, "Advance the context to the next revision" },
   {NULL, NULL, 0, NULL}  /* Sentinel */
 };
 
@@ -425,6 +438,18 @@ static PyObject* AstNodeObject_attribute_group(AstNodeObject *self, PyObject *Py
                      self->astNode->attributeGroup());
 }
 
+static PyObject* AstNodeObject_pragmas(AstNodeObject *self, PyObject *Py_UNUSED(ignored)) {
+  PyObject* elms = PySet_New(NULL);
+  auto attrs = self->astNode->attributeGroup();
+  if (attrs) {
+    for (auto p: attrs->pragmas()) {
+      PyObject* s = Py_BuildValue("s", chpl::uast::pragmatags::pragmaTagToName(p));
+      PySet_Add(elms, s);
+    }
+  }
+  return elms;
+}
+
 static PyObject* AstNodeObject_parent(AstNodeObject* self, PyObject *Py_UNUSED(ignored)) {
   auto contextObject = (ContextObject*) self->contextObject;
   auto context = &contextObject->context;
@@ -451,6 +476,7 @@ static PyMethodDef AstNodeObject_methods[] = {
   {"attribute_group", (PyCFunction) AstNodeObject_attribute_group, METH_NOARGS, "Get the attribute group, if any, associated with this node"},
   {"location", (PyCFunction) AstNodeObject_location, METH_NOARGS, "Get the location of this AST node in its file"},
   {"parent", (PyCFunction) AstNodeObject_parent, METH_NOARGS, "Get the parent node of this AST node"},
+  {"pragmas", (PyCFunction) AstNodeObject_pragmas, METH_NOARGS, "Get the pragmas of this AST node"},
   {"unique_id", (PyCFunction) AstNodeObject_unique_id, METH_NOARGS, "Get a unique identifer for this AST node"},
   {NULL, NULL, 0, NULL} /* Sentinel */
 };
