@@ -1,3 +1,4 @@
+*.so
 c-blosc
 ReindexStore
 Test1D
