@@ -3385,6 +3385,7 @@ void Resolver::resolveIdentifier(const Identifier* ident) {
   // only, resolve as an implicit 'this' call on the innermost variable.
   // TODO: replace this hacky solution with an adjustment to the scope
   // resolution process
+
   if (resolvingCalledIdent && ids.numIds() > 1) {
     bool onlyVars = true;
     for (auto idIt = ids.begin(); idIt != ids.end(); ++idIt) {
@@ -3397,6 +3398,19 @@ void Resolver::resolveIdentifier(const Identifier* ident) {
     if (onlyVars) {
       ids.truncate(1);
     }
+    int firstVar = 0;
+    for (auto idIt = ids.begin(); idIt != ids.end(); ++idIt) {
+      if (parsing::idToAst(context, idIt.curIdAndFlags().id())
+               ->isVarLikeDecl()) {
+        break;
+      } else {
+        firstVar++;
+      }
+    }
+    if (firstVar != ids.numIds()) {
+      ids = MatchingIdsWithName::createWithIdAndFlags(ids.idAndFlags(firstVar));  
+    }
+    
   }
 
   // TODO: these errors should be enabled for scope resolution
