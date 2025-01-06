@@ -877,6 +877,41 @@ static void test18() {
   assert(guard.numErrors() == 0);
 }
 
+static void test19() {
+  // test ambiguity between variable and record method
+  printf("test19\n");
+  Context ctx;
+  Context* context = &ctx;
+  ErrorGuard guard(context);
+
+  std::string program = R"""(
+      record X {}
+      proc X.this(arg: string) { return 5; }
+
+      record R {}
+
+      proc R.test() {
+        var foobar : X;
+        proc R.foobar(arg: string) { return arg; }
+
+        // which 'foobar'?
+        return foobar("blah");
+      }
+
+      var r : R;
+      var x = r.test();
+    )""";
+  
+  auto m = parseModule(context, std::move(program));
+  auto results = resolveModule(context, m->id());
+  auto var = findVariable(m, "x");
+  auto init = var->initExpression();
+  assert(init);
+  auto qt = results.byAst(init).type();
+  assert(qt.type()->isIntType());
+  assert(guard.numErrors() == 0);
+}
+
 int main() {
   test1();
   test2();
@@ -896,7 +931,7 @@ int main() {
   test16();
   test17();
   test18();
-
+  test19();
   return 0;
 }
 
