@@ -3381,25 +3381,15 @@ void Resolver::resolveIdentifier(const Identifier* ident) {
   auto parenlessInfo = ParenlessOverloadInfo();
   auto ids = lookupIdentifier(ident, resolvingCalledIdent, parenlessInfo);
 
-  // If we looked up a called identifier and found ambiguity between variables
-  // only, resolve as an implicit 'this' call on the innermost variable.
+
+  // If we have ambiguity between a an implicit 'this' call on a variable
+  // and a method call, choose the variable. This also handles the case of
+  // ambiguity between two variables, which is resolved by choosing the
+  // innermost variable.
   // TODO: replace this hacky solution with an adjustment to the scope
   // resolution process
 
   if (resolvingCalledIdent && ids.numIds() > 1) {
-    bool onlyVars = true;
-    for (auto idIt = ids.begin(); idIt != ids.end(); ++idIt) {
-      if (!parsing::idToAst(context, idIt.curIdAndFlags().id())
-               ->isVarLikeDecl()) {
-        onlyVars = false;
-        break;
-      }
-    }
-    if (onlyVars) {
-      ids.truncate(1);
-    }
-
-    // If we have ambiguity between a an implicit 'this' call on a variable and a method call, choose the variable.  
     for (auto idIt = ids.begin(); idIt != ids.end(); ++idIt) {
       if (parsing::idToAst(context, idIt.curIdAndFlags().id())
                ->isVarLikeDecl()) {
