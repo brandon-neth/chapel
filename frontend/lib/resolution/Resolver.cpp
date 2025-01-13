@@ -3398,19 +3398,14 @@ void Resolver::resolveIdentifier(const Identifier* ident) {
     if (onlyVars) {
       ids.truncate(1);
     }
-    int firstVar = 0;
+
+    // If we have ambiguity between a an implicit 'this' call on a variable and a method call, choose the variable.  
     for (auto idIt = ids.begin(); idIt != ids.end(); ++idIt) {
       if (parsing::idToAst(context, idIt.curIdAndFlags().id())
                ->isVarLikeDecl()) {
-        break;
-      } else {
-        firstVar++;
+        ids = MatchingIdsWithName::createWithIdAndFlags(idIt.curIdAndFlags());
       }
     }
-    if (firstVar != ids.numIds()) {
-      ids = MatchingIdsWithName::createWithIdAndFlags(ids.idAndFlags(firstVar));  
-    }
-    
   }
 
   // TODO: these errors should be enabled for scope resolution
